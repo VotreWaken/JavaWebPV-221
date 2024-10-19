@@ -138,6 +138,22 @@ public class SignupServlet extends RestServlet {
         String uploadedName = null;
         FileItem avatar = res.getFiles().get( "user-avatar" );
         if( avatar.getSize() > 0 ) {
+
+            String[] allowedExtensions = {".jpg", ".jpeg", ".png", ".gif"};
+            String fileName = avatar.getName().toLowerCase();
+            boolean isValidExtension = false;
+            
+            for (String ext : allowedExtensions) {
+                if (fileName.endsWith(ext)) {
+                    isValidExtension = true;
+                    break;
+                }
+            }
+
+            if (!isValidExtension) {
+                throw new Exception("Invalid file type. Allowed types: .jpg, .jpeg, .png, .gif");
+            }
+
             uploadedName = fileService.upload( avatar );
             model.setAvatar( uploadedName );
         }
