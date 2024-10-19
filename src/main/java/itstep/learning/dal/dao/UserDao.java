@@ -7,6 +7,8 @@ import itstep.learning.dal.dto.User;
 import itstep.learning.models.form.UserSignupFormModel;
 import itstep.learning.services.hash.HashService;
 
+import javax.naming.AuthenticationException;
+import java.rmi.ServerException;
 import java.sql.*;
 import java.util.Date;
 import java.util.Locale;
@@ -44,26 +46,32 @@ public class UserDao {
         return null;
     }
 
-    public User authenticate( String login, String password ) {
+    public User authenticate( String login, String password ) throws AuthenticationException, ServerException  {
         String sql = "SELECT * FROM users JOIN users_security " +
                 " ON users.id = users_security.user_id " +
                 " WHERE users_security.login = ? ";
 
-        try( PreparedStatement prep = connection.prepareStatement( sql ) ) {
-            prep.setString( 1, login );
-            ResultSet res = prep.executeQuery();
-            if( res.next() ) {
-                String salt = res.getString("salt");
-                String dk = res.getString("dk");
-                if( hashService.digest( salt + password ).equals( dk ) ) {
-                    return new User( res );
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, login);
+            ResultSet resultSet = ps.executeQuery();
+            if (resultSet.next()) {
+                String salt = resultSet.getString("salt");
+                String dk = resultSet.getString("dk");
+                if (hashService.digest(salt + password).equals(dk)) {
+                    logger.log(Level.WARNING, "OK");
+                    return new User(resultSet);
+                } else {
+                    logger.log(Level.WARNING, "Incorrect password");
+                    throw new AuthenticationException("Incorrect password");
                 }
+            } else {
+                logger.log(Level.WARNING, "Incorrect login");
+                throw new AuthenticationException("Incorrect login");
             }
+        } catch (SQLException ex) {
+            logger.log(Level.WARNING, ex.getMessage() + " -- " + sql, ex);
+            throw new ServerException("Internal server error during authentication.", ex);
         }
-        catch( SQLException ex ) {
-            logger.log( Level.WARNING, ex.getMessage() + " -- " + sql, ex );
-        }
-        return null;
     }
 
     public User signup( UserSignupFormModel model ) {

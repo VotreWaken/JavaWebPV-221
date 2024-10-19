@@ -11,12 +11,14 @@ import itstep.learning.services.formparse.FormParseResult;
 import itstep.learning.services.formparse.FormParseService;
 import org.apache.commons.fileupload.FileItem;
 
+import javax.naming.AuthenticationException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.rmi.ServerException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -52,26 +54,42 @@ public class SignupServlet extends RestServlet {
     }
 
     protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String userLogin = req.getParameter( "user-email" );
-        String userPassword = req.getParameter( "user-password" );
-        logger.info( "userLogin: " + userLogin + ", userPassword: " + userPassword );
+        String userLogin = req.getParameter("user-email");
+        String userPassword = req.getParameter("user-password");
+        logger.info("userLogin: " + userLogin + ", userPassword: " + userPassword);
 
-        if( userLogin == null || userLogin.isEmpty() ||
-                userPassword == null || userPassword.isEmpty() ) {
-            super.sendRest( 401, "Missing or empty credentials" );
+        if (userLogin == null || userLogin.isEmpty() ||
+                userPassword == null || userPassword.isEmpty()) {
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            resp.getWriter().write("Missing or empty credentials");
             return;
         }
-        User user = userDao.authenticate( userLogin, userPassword );
-        if( user == null ) {
-            super.sendRest( 401, "Credentials rejected" );
-            return;
+
+        try {
+            User user = userDao.authenticate(userLogin, userPassword);
+
+            if (user == null) {
+                resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                resp.getWriter().write("Invalid username or password");
+                return;
+            }
+
+            HttpSession session = req.getSession();
+            session.setAttribute("userId", user.getId());
+            resp.setStatus(HttpServletResponse.SC_OK);
+            resp.getWriter().write(user.toString());
+
+        } catch (AuthenticationException e) {
+            logger.warning("Authentication failed: " + e.getMessage());
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            resp.getWriter().write(e.getMessage());
+        } catch (ServerException e) {
+            logger.warning("Server error: " + e.getMessage());
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write("Internal server error");
         }
-        // утримання авторизації - сесії
-        // зберігаємо у сесію відомості про користувача
-        HttpSession session = req.getSession();
-        session.setAttribute( "userId", user.getId() );
-        super.sendRest( 200, user );
     }
+
 
 
     @Override
@@ -142,7 +160,7 @@ public class SignupServlet extends RestServlet {
             String[] allowedExtensions = {".jpg", ".jpeg", ".png", ".gif"};
             String fileName = avatar.getName().toLowerCase();
             boolean isValidExtension = false;
-            
+
             for (String ext : allowedExtensions) {
                 if (fileName.endsWith(ext)) {
                     isValidExtension = true;
