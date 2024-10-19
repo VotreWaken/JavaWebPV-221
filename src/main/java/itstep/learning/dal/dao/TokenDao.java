@@ -22,6 +22,66 @@ public class TokenDao {
         this.logger = logger;
     }
 
+    public Timestamp getTimeUntilTokenExpirationUpdate(Token token) {
+        long currentTimeMillis = System.currentTimeMillis();
+        long remainingTimeMillis = token.getExp().getTime() - currentTimeMillis;
+
+        // Если осталось меньше 10 минут, токен можно обновить
+        if (remainingTimeMillis > 0 && remainingTimeMillis <= 10 * 60 * 1000) {
+            long typicalTokenDurationMillis = 1000 * 60 * 60 * 3; // 3 часа
+            long additionalTimeMillis = typicalTokenDurationMillis / 2;
+
+            // Новый Timestamp с учетом времени обновления токена
+            long newExpirationTimeMillis = currentTimeMillis + additionalTimeMillis;
+            return new Timestamp(newExpirationTimeMillis);
+        }
+
+        // Если обновление не требуется, возвращаем текущий Timestamp
+        return new Timestamp(currentTimeMillis);
+    }
+
+    public Token getNotExpiredTokenByUserId(UUID userId) throws SQLException {
+        Token token = new Token();
+        String sql = "SELECT * FROM tokens WHERE user_id = ? AND exp > ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, userId.toString());
+            ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                // Извлекаем данные токена
+                token.setTokenId(UUID.fromString(rs.getString("token_id")));
+                token.setUserId(UUID.fromString(rs.getString("user_id")));
+                token.setIat(rs.getTimestamp("iat"));
+                token.setExp(rs.getTimestamp("exp"));
+
+                long currentTimeMillis = System.currentTimeMillis();
+                long remainingTimeMillis = token.getExp().getTime() - currentTimeMillis;
+
+                if (remainingTimeMillis > 0) {
+                    long typicalTokenDurationMillis = 1000 * 60 * 60 * 3;
+                    long additionalTimeMillis = typicalTokenDurationMillis / 2;
+
+                    token.setExp(new Timestamp(currentTimeMillis + additionalTimeMillis));
+
+                    String updateSql = "UPDATE tokens SET exp = ? WHERE token_id = ?";
+                    try (PreparedStatement updatePs = connection.prepareStatement(updateSql)) {
+                        updatePs.setTimestamp(1, new Timestamp(token.getExp().getTime()));
+                        updatePs.setString(2, token.getTokenId().toString());
+                        updatePs.executeUpdate();
+                    }
+                    return token;
+                }
+            }
+        } catch (SQLException e) {
+            // Логирование и обработка ошибки
+            e.printStackTrace();
+            throw e;
+        }
+        return null; // Если нет активного токена
+    }
+
     public User getUserByTokenId( UUID tokenId ) throws Exception {
         String sql = "SELECT * FROM tokens t JOIN users u ON t.user_id = u.id WHERE t.token_id = ?";
         try( PreparedStatement prep = connection.prepareStatement(sql) ) {

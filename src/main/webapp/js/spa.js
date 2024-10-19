@@ -1,5 +1,5 @@
 ﻿const env = {
-    apiHost: "http://localhost:8080/JavaWebPv221"
+    apiHost: "http://localhost:8080/JavaWebPv221_war_exploded"
 };
 
 function request(url, params) {

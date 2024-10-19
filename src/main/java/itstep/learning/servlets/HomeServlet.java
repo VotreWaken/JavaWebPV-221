@@ -8,6 +8,7 @@ import itstep.learning.dal.dao.UserDao;
 import itstep.learning.dal.dao.shop.CartDao;
 import itstep.learning.dal.dao.shop.CategoryDao;
 import itstep.learning.dal.dao.shop.ProductDao;
+import itstep.learning.dal.dto.Token;
 import itstep.learning.services.hash.HashService;
 
 import javax.servlet.ServletException;
@@ -16,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Connection;
+import java.util.UUID;
 
 @Singleton
 public class HomeServlet extends HttpServlet {
@@ -44,6 +46,16 @@ public class HomeServlet extends HttpServlet {
                 categoryDao.installTables()
                         ? "Tables OK" : "Tables Fail" );
         // ~ return View()
+        Token token = null;
+        try
+        {
+            token = tokenDao.getNotExpiredTokenByUserId(UUID.fromString("7d07604f-bc5b-4d38-b804-be5b0353b09d"));
+        }
+        catch (Exception e) {
+
+        }
+        req.setAttribute("token", token);
+        req.setAttribute("tokenUpdate", tokenDao.getTimeUntilTokenExpirationUpdate(token));
         req.setAttribute( "page", "home" );
         req.getRequestDispatcher("WEB-INF/views/_layout.jsp").forward(req, resp);
     }
