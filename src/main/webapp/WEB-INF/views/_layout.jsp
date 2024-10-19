@@ -17,68 +17,78 @@
     <link rel="stylesheet" href="<%=contextPath%>/css/site.css" />
 </head>
 <body>
-    <header>
-        <nav>
-            <div class="nav-wrapper light-blue">
-                <a href="<%=contextPath%>/" class="site-logo left">
-                    <img src="<%=contextPath%>/img/Java_Logo.png" alt="Logo" />
-                    PV-221
-                </a>
-                <ul id="nav-mobile" class="left">
-                    <li><a href="<%=contextPath%>/spa">SPA</a></li>
-                    <li><a href="#">Components</a></li>
-                    <li><a href="#">JavaScript</a></li>
+<header>
+    <nav>
+        <div class="nav-wrapper light-blue">
+            <a href="<%=contextPath%>/" class="site-logo left">
+                <img src="<%=contextPath%>/img/Java_Logo.png" alt="Logo" />
+                PV-221
+            </a>
+            <ul id="nav-mobile" class="left">
+                <li><a href="<%=contextPath%>/spa">SPA</a></li>
+                <li><a href="#">Components</a></li>
+                <li><a href="#">JavaScript</a></li>
+            </ul>
+            <% if( isAuthenticated ) { %>
+            <img src="<%=contextPath%>/file/<%=avatar%>"
+                 alt="avatar"
+                 title="<%=userName%>"
+                 class="nav-addon right nav-avatar"/>
+            <a class="nav-addon right" id="logoutBtn" href="?logout"><i class="material-icons">logout</i></a>
+            <% } else { %>
+            <a class="nav-addon right" href="<%=contextPath%>/signup"><i class="material-icons">person_add</i></a>
+            <!-- Modal Trigger -->
+            <a class="nav-addon right modal-trigger" href="#auth-modal"><i class="material-icons">login</i></a>
+            <% } %>
+
+        </div>
+    </nav>
+</header>
+<!-- RenderBody -->
+<main class="container"><jsp:include page='<%= pageName + ".jsp" %>' /></main>
+<div class="spacer"></div>
+<footer class="page-footer light-blue">
+    <div class="container">
+        <div class="row">
+            <div class="col l6 s12">
+                <h5 class="white-text">Footer Content</h5>
+                <p class="grey-text text-lighten-4">You can use rows and columns here to organize your footer content.</p>
+            </div>
+            <div class="col l4 offset-l2 s12">
+                <h5 class="white-text">Links</h5>
+                <ul>
+                    <li><a class="grey-text text-lighten-3" href="#!">Link 1</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#!">Link 2</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#!">Link 3</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#!">Link 4</a></li>
                 </ul>
-                <% if( isAuthenticated ) { %>
-                    <img src="<%=contextPath%>/file/<%=avatar%>"
-                         alt="avatar"
-                         title="<%=userName%>"
-                         class="nav-addon right nav-avatar"/>
-                    <a class="nav-addon right" href="?logout"><i class="material-icons">logout</i></a>
-                <% } else { %>
-                    <a class="nav-addon right" href="<%=contextPath%>/signup"><i class="material-icons">person_add</i></a>
-                    <!-- Modal Trigger -->
-                    <a class="nav-addon right modal-trigger" href="#auth-modal"><i class="material-icons">login</i></a>
-                <% } %>
-
             </div>
-        </nav>
-    </header>
-    <!-- RenderBody -->
-    <main class="container"><jsp:include page='<%= pageName + ".jsp" %>' /></main>
-    <div class="spacer"></div>
-    <footer class="page-footer light-blue">
+        </div>
+    </div>
+    <div class="footer-copyright">
         <div class="container">
-            <div class="row">
-                <div class="col l6 s12">
-                    <h5 class="white-text">Footer Content</h5>
-                    <p class="grey-text text-lighten-4">You can use rows and columns here to organize your footer content.</p>
-                </div>
-                <div class="col l4 offset-l2 s12">
-                    <h5 class="white-text">Links</h5>
-                    <ul>
-                        <li><a class="grey-text text-lighten-3" href="#!">Link 1</a></li>
-                        <li><a class="grey-text text-lighten-3" href="#!">Link 2</a></li>
-                        <li><a class="grey-text text-lighten-3" href="#!">Link 3</a></li>
-                        <li><a class="grey-text text-lighten-3" href="#!">Link 4</a></li>
-                    </ul>
-                </div>
-            </div>
+            © 2024 ITSTEP PV-221
+            <a class="grey-text text-lighten-4 right" href="#!">More Links</a>
         </div>
-        <div class="footer-copyright">
-            <div class="container">
-                © 2024 ITSTEP PV-221
-                <a class="grey-text text-lighten-4 right" href="#!">More Links</a>
-            </div>
-        </div>
-    </footer>
+    </div>
+</footer>
 
+<div id="logout-modal" class="modal">
+    <div class="modal-content">
+        <h4>Выход</h4>
+        <p>Вы точно хотите выйти?</p>
+    </div>
+    <div class="modal-footer">
+        <button class="modal-close waves-effect waves-green btn-flat">Отмена</button>
+        <a href="<%=contextPath%>/logout" class="waves-effect waves-red btn-flat">Выйти</a>
+    </div>
+</div>
 
-    <!-- Modal Structure -->
-    <div id="auth-modal" class="modal">
-        <div class="modal-content">
-            <h4>Автентифікація</h4>
-            <form id="modal-auth-form" action="<%=contextPath%>/signup">
+<!-- Modal Structure -->
+<div id="auth-modal" class="modal">
+    <div class="modal-content">
+        <h4>Автентифікація</h4>
+        <form id="modal-auth-form" action="<%=contextPath%>/signup">
             <div class="row">
                 <div class="input-field col s6">
                     <i class="material-icons prefix">alternate_email</i>
@@ -91,20 +101,35 @@
                     <label for="auth-user-password">Пароль</label>
                 </div>
             </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button class="modal-close waves-effect waves-green btn-flat">Закрити</button>
-            <button form="modal-auth-form" type="submit" class="waves-effect waves-green btn-flat">Вхід</button>
-        </div>
+        </form>
     </div>
+    <div class="modal-footer">
+        <button class="modal-close waves-effect waves-green btn-flat">Закрити</button>
+        <button form="modal-auth-form" type="submit" class="waves-effect waves-green btn-flat">Вхід</button>
+    </div>
+</div>
 
 
-    <!-- Compiled and minified JavaScript -->
+<!-- Compiled and minified JavaScript -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 <script>
 
 </script>
 <script src="<%=contextPath%>/js/site.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const logoutButton = document.getElementById('logoutBtn');
+
+        if (logoutButton !== null) {
+            console.log("Modal");
+            logoutButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (confirm('Do you really want logout?'))  {
+                    window.location.href = window.location + "/?logout=true";
+                }
+            });
+        }
+    });
+</script>
 </body>
 </html>

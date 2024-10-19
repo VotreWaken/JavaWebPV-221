@@ -8,13 +8,10 @@ import itstep.learning.dal.dto.Token;
 import itstep.learning.dal.dto.User;
 import itstep.learning.rest.RestServlet;
 
-import javax.naming.AuthenticationException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.rmi.ServerException;
-import java.sql.SQLException;
 import java.util.Base64;
 import java.util.logging.Logger;
 
@@ -55,18 +52,13 @@ public class AuthServlet extends RestServlet {
             return;
         }
         String[] parts = credentials.split( ":", 2 );
-        try {
-            User user = userDao.authenticate(parts[0], parts[1]);
-            if (user == null) {
-                super.sendRest(401, "Invalid username or password");
-                return;
-            }
-            Token token = tokenDao.create(user);
-            super.sendRest(200, token);
-        } catch (AuthenticationException | ServerException e)
-        {
-            logger.warning(e.getMessage());
+        User user = userDao.authenticate( parts[0], parts[1] );
+        if( user == null ) {
+            super.sendRest( 401, "Invalid username or password" );
+            return;
         }
+        Token token = tokenDao.create( user ) ;
+        super.sendRest( 200, token );
     }
 
 }
