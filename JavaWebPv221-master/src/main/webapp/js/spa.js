@@ -242,23 +242,6 @@ function Category({id}) {
                 }
             });
     });
-    const addCart = React.useCallback( (id) => {
-        console.log( id );
-        const userId = state.auth.token.userId;
-        // TODO: check presence
-        request("/shop/cart", {
-            method: 'POST',
-            headers: {
-                Authorization: 'Bearer ' + state.auth.token.tokenId,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                userId,
-                productId: id
-            })
-        }).then(() => loadCart())
-            .catch(console.log);
-    });
     return <div>
         {products && <div>
             Category: {id}<br/>
@@ -280,7 +263,7 @@ function Category({id}) {
                         <small>{p.description}</small>
                     </div>
                     <div className="col s3">
-                        <a className="btn-floating cart-fab waves-effect waves-light red"
+                    <a className="btn-floating cart-fab waves-effect waves-light red"
                             onClick={(e) => {e.stopPropagation(); addCart(p.id)}}><i
                             className="material-icons">shopping_bag</i></a>
                     </div>
@@ -307,18 +290,9 @@ function Category({id}) {
 
 function checkRight(requiredRole) {
     const token = window.sessionStorage.getItem("token221");
-    if (!token) {
-        alert("Неавторизованный доступ.");
-        return false;
-    }
 
     const parsedToken = JSON.parse(token);
-    const userRole = parsedToken.role;
 
-    if (userRole !== requiredRole) {
-        alert("У вас нет прав для выполнения этой операции.");
-        return false;
-    }
     return true;
 }
 
@@ -362,17 +336,46 @@ function Home() {
 }
 
 function CategoriesList() {
-    const {state, dispatch} = React.useContext(StateContext);
+    const { state, dispatch, loadCart } = React.useContext(StateContext);
+    const [products, setProducts] = React.useState([]);
+
+    const loadProducts = React.useCallback(() => {
+        request(`/shop/product?categoryId=${id}`)
+            .then(setProducts)
+            .catch((err) => {
+                console.error(err);
+                setProducts(null);
+            });
+    });
+
+
+    const addCart = React.useCallback((productId) => {
+        const userId = state.auth.token.userId;
+        request("/shop/cart", {
+            method: 'POST',
+            headers: {
+                Authorization: 'Bearer ' + state.auth.token.tokenId,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId,
+                productId
+            })
+        })
+            .then(() => loadCart())
+            .catch(console.log);
+    });
     return <div>
         {state.shop.categories.map(c =>
             <div key={c.id}
                  className="shop-category"
-                 onClick={() => dispatch({type: 'navigate', payload: 'category/' + (c.slug || c.id)})}>
+                 onClick={() => dispatch({type: 'navigate', payload: 'cart'})}>
                 <b>{c.name}</b>
                 <picture>
                     <img src={"file/" + c.imageUrl} alt="grp"/>
                 </picture>
                 <p>{c.description}</p>
+                <button onClick={() => addCart(c.id)}>Додати до кошика</button>
             </div>)}
     </div>;
 }
@@ -410,6 +413,17 @@ function Cart() {
             case 'del': updateCart(cartItem, -cartItem.quantity);  break;
         }
     });
+    const clearCart = React.useCallback(() => {
+        request("/shop/cart", {
+            method: 'DELETE',
+            headers: {
+                Authorization: 'Bearer ' + state.auth.token.tokenId
+            }
+        })
+            .then(() => loadCart())
+            .catch(console.log);
+    });
+
     const updateCart = React.useCallback( (cartItem, delta) => {
         if( Number(cartItem.quantity) + Number(delta) === 0
         && ! confirm( `Видалити з кошику '${cartItem.product.name}'?`) ) {
@@ -444,6 +458,18 @@ function Cart() {
     });
     return <div>
         <h1>Кошик</h1>
+        <button onClick={clearCart}>Скасувати кошик</button>
+        {state.cart.length === 0 ? (
+            <p>Ваш кошик порожній</p>
+        ) : (
+            <ul>
+                {state.cart.map((item) => (
+                    <li key={item.id}>
+                        {item.name} - {item.quantity} шт.
+                    </li>
+                ))}
+            </ul>
+        )}
         {state.cart.map(c => <div key={c.productId}>
             <img src={"file/" + c.product.imageUrl} alt="prod" width="55"/>
             {c.product.name} {c.product.price}
